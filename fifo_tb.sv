@@ -18,6 +18,8 @@ module fifotb;
     initial begin
         rst_n = 0;
         in_data=$random;
+        wen=1;
+        rready=1;
         repeat(10) begin
             @(negedge clk);
             if(out_data) begin
@@ -33,14 +35,16 @@ module fifotb;
             @(negedge clk);
             constr1(wen, 80);
             in_data=$random;
-            rready=0;
+            constr2(rready, 20);
         end
         wen = 0;
+        constr1(wen,80,1);
+        constr2(rready,20,1);
         repeat(100) begin
             @(negedge clk);
             constr2(rready, 80);
             in_data=$random;
-            wen=0;
+            constr1(wen , 20);
         end
         repeat(100) begin
             @(negedge clk);
@@ -51,9 +55,13 @@ module fifotb;
         $stop;
     end
 
-    task constr1 (output inp_sig , input percent);
-        static int count=0, not_count=0;
-        if(count/(count+not_count)*100 < percent) begin
+    task automatic constr1 (ref inp_sig , input int percent, bit restart=0);
+        static int count=1, not_count=0;
+        if(restart) begin
+            count=1;
+            not_count=0;
+        end
+        if(real'(count)/real'(count+not_count)*100.0 < percent) begin
             inp_sig = 1;
             count++;
         end
@@ -63,15 +71,19 @@ module fifotb;
         end
     endtask
 
-    task constr2 (output inp_sig , input percent);
-        static int count=0, not_count=0;
-        if(count/(count+not_count)*100 < percent) begin
+    task automatic constr2 (ref inp_sig , input int percent, bit restart=0);
+        static int count2=1, not_count2=0;
+        if(restart) begin
+            count2=1;
+            not_count2=0;
+        end
+        if(real'(count2)/real'(count2+not_count2)*100.0 < percent) begin
             inp_sig = 1;
-            count++;
+            count2++;
         end
         else begin
             inp_sig = 0;
-            not_count++;
+            not_count2++;
         end
     endtask
 
